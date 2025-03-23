@@ -40,21 +40,16 @@ FolderManager/
 
 ## Example usage  
 ```
-Enter command: create myFolder
-Folder 'myFolder' created successfully.
-
-Enter command: move myFolder newFolder
-Moved 'myFolder' to 'newFolder'.
-
-Enter command: list newFolder
-LIST
-
+create myFolder
+move myFolder newFolder
+create newFolder/abc1
+create newFolder/abc2
+list
 newFolder
-  subFolder1
-  subFolder2
+  abc1
+  abc2
 
-Enter command: delete newFolder
-Deleted: newFolder
+delete newFolder
 ```
 
 ## Requirements  
