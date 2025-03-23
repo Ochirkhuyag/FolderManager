@@ -4,11 +4,19 @@ import java.util.Map;
 import java.util.Scanner;
 
 import commands.*;
+import config.FeatureFlag;
+import storage.Folder;
 
 public class FolderManager {
 	private static final Map<String, Command> commandMap = new HashMap<>();
+	private static final Folder root = new Folder("");
 
     public static void main(String[] args) {
+    	System.out.println("Folder Manager v1.0 - Endpoint coding challenge by Ochi Samand");
+    	
+    	boolean debugMode = args.length > 0 && args[0].equalsIgnoreCase("-debug");
+
+        setConfig(debugMode);
         registerCommands();
         
         System.out.println("Folder Manager v1.0 - Endpoint coding challenge by Ochi Samand");
@@ -42,9 +50,13 @@ public class FolderManager {
     }
 
     private static void registerCommands() {
-        commandMap.put("create", CreateCommand.getInstance());
-        commandMap.put("delete", DeleteCommand.getInstance());
-        commandMap.put("move", MoveCommand.getInstance());
-        commandMap.put("list", ListCommand.getInstance());
+        commandMap.put("create", CreateCommand.getInstance(root));
+        commandMap.put("delete", DeleteCommand.getInstance(root));
+        commandMap.put("move", MoveCommand.getInstance(root));
+        commandMap.put("list", ListCommand.getInstance(root));
+    }
+    
+    private static void setConfig(boolean showDebugFlag) {
+    	FeatureFlag.setPrintDebugMessage(showDebugFlag);
     }
 }

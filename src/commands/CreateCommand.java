@@ -1,34 +1,40 @@
 package commands;
 
-import java.io.File;
+import config.FeatureFlag;
+import storage.Folder;
 
 public class CreateCommand implements Command {
-	
-	private static CreateCommand command;
-	
-	private CreateCommand() {}
-	
-	public static Command getInstance() {
-		if(command == null) {
-			command = new CreateCommand();
-		}
-		return command;
-	}
 
-	public void execute(String[] args) {
-		if (args.length != 2) {
-            print("Usage: create <folder>");
+    private static CreateCommand command;
+    private Folder rootFolder;
+
+    private CreateCommand(Folder rootFolder) {
+        this.rootFolder = rootFolder;
+    }
+
+    public static Command getInstance(Folder rootFolder) {
+        if (command == null) {
+            command = new CreateCommand(rootFolder);
+        }
+        return command;
+    }
+
+    public void execute(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: create <folder>");
             return;
         }
-        createFolder(args[1]);
-	}
-	
-	private void createFolder(String folderName) {
-        File folder = new File(folderName);
-        if (folder.exists()) {
-        	print("Folder '" + folderName + "' already exists.");
-        } else if (!folder.mkdirs()) {
-        	print("Failed to create folder '" + folderName + "'.");
+        createInMemoryFolder(args[1]);
+    }
+
+    private void createInMemoryFolder(String folderPath) {
+        String[] parts = folderPath.split("/");
+        Folder current = rootFolder;
+        for (String part : parts) {
+            current = current.addOrGetSubfolder(part);
+        }
+        if(FeatureFlag.getPrintDebugMessage()) {
+        	System.out.println("Created folder '" + folderPath + "' in memory.");
         }
     }
 }

@@ -1,46 +1,60 @@
 package commands;
 
-import java.io.File;
+import config.FeatureFlag;
+import storage.Folder;
 
 public class DeleteCommand implements Command {
-	
-	private static DeleteCommand command;
-	
-	private DeleteCommand() {}
+    
+    private static DeleteCommand command;
+    private Folder rootFolder;
 
-	public static Command getInstance() {
-		if(command == null) {
-			command = new DeleteCommand();
-		}
-		return command;
-	}
-
-	public void execute(String[] args) {
-		if (args.length != 2) {
-            print("Usage: delete <folder>");
-            return;
-        }
-        File folder = new File(args[1]);
-        deleteFolder(folder);
+    private DeleteCommand(Folder rootFolder) {
+        this.rootFolder = rootFolder;
     }
 
-    private void deleteFolder(File folder) {
-    	if (!folder.exists()) {
-            print("Folder '" + folder.getPath() + "' does not exist.");
+    public static Command getInstance(Folder rootFolder) {
+        if (command == null) {
+            command = new DeleteCommand(rootFolder);
+        }
+        return command;
+    }
+
+    @Override
+    public void execute(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Usage: delete <folder>");
+            return;
+        }
+        deleteInMemoryFolder(args[1]);
+    }
+
+    private void deleteInMemoryFolder(String folderPath) {
+        Folder parent = findParentFolder(folderPath);
+        String folderName = getLastPart(folderPath);
+
+        if (parent == null || !parent.hasSubfolder(folderName)) {
+            System.out.println("Folder '" + folderPath + "' does not exist.");
             return;
         }
 
-        if (folder.isDirectory()) {
-            File[] contents = folder.listFiles();
-            if (contents != null) {
-                for (File file : contents) {
-                    deleteFolder(file);
-                }
-            }
+        parent.removeSubfolder(folderName);
+        if(FeatureFlag.getPrintDebugMessage()) {
+        	System.out.println("Deleted '" + folderPath + "' from memory.");
         }
+    }
 
-        if (!folder.delete()) {
-            print("Failed to delete: " + folder.getPath());
+    private Folder findParentFolder(String fullPath) {
+        String[] parts = fullPath.split("/");
+        Folder current = rootFolder;
+        for (int i = 0; i < parts.length - 1; i++) {
+            current = current.getSubfolder(parts[i]);
+            if (current == null) return null;
         }
-	}
+        return current;
+    }
+
+    private String getLastPart(String path) {
+        String[] parts = path.split("/");
+        return parts[parts.length - 1];
+    }
 }

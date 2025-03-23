@@ -1,49 +1,78 @@
 package commands;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import config.FeatureFlag;
+import storage.Folder;
 
 public class MoveCommand implements Command {
 
-	private static MoveCommand command;
-	
-	private MoveCommand() {}
+    private static MoveCommand command;
+    private Folder rootFolder;
 
-	public static Command getInstance() {
-		if(command == null) {
-			command = new MoveCommand();
-		}
-		return command;
-	}
-	
-	public void execute(String[] args) {
-		if(args.length != 3) {
-			print("Usage: move <source folder> <desitination folder>");
-		}
-		moveFolder(args[1], args[2]);
-	}
-	
-	private void moveFolder(String src, String dest) {
-        File sourceFolder = new File(src);
-        File destFolder = new File(dest);
+    private MoveCommand(Folder rootFolder) {
+        this.rootFolder = rootFolder;
+    }
 
-        if (!sourceFolder.exists()) {
-            print("Source folder '" + src + "' does not exist.");
+    public static Command getInstance(Folder rootFolder) {
+        if (command == null) {
+            command = new MoveCommand(rootFolder);
+        }
+        return command;
+    }
+
+    public void execute(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Usage: move <source-folder> <destination-folder>");
+            return;
+        }
+        moveFolder(args[1], args[2]);
+    }
+
+    private void moveFolder(String srcPath, String destPath) {
+        Folder parentOfSrc = findParentFolder(srcPath);
+        String srcName = getLastPart(srcPath);
+
+        if (parentOfSrc == null || !parentOfSrc.hasSubfolder(srcName)) {
+            System.out.println("Source folder '" + srcPath + "' does not exist.");
             return;
         }
 
-        if (destFolder.exists()) {
-            print("Destination folder '" + dest + "' already exists.");
+        Folder srcFolder = parentOfSrc.getSubfolder(srcName);
+
+        Folder destFolder = findOrCreateFolder(destPath);
+        if (destFolder.hasSubfolder(srcName)) {
+            System.out.println("Destination folder '" + destPath + "' already has a subfolder '" + srcName + "'.");
             return;
         }
 
-        try {
-            Files.move(sourceFolder.toPath(), destFolder.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            print("Failed to move folder: " + e.getMessage());
+        parentOfSrc.removeSubfolder(srcName);
+        destFolder.addSubfolder(srcFolder);
+        
+        if(FeatureFlag.getPrintDebugMessage()) {
+        	System.out.println("Moved '" + srcPath + "' to '" + destPath + "'.");
         }
     }
 
+    private Folder findParentFolder(String fullPath) {
+        String[] parts = fullPath.split("/");
+        Folder current = rootFolder;
+        for (int i = 0; i < parts.length - 1; i++) {
+            current = current.getSubfolder(parts[i]);
+            if (current == null) return null;
+        }
+        return current;
+    }
+
+    private String getLastPart(String path) {
+        String[] parts = path.split("/");
+        return parts[parts.length - 1];
+    }
+
+    private Folder findOrCreateFolder(String path) {
+        String[] parts = path.split("/");
+        Folder current = rootFolder;
+        for (String part : parts) {
+            current = current.addOrGetSubfolder(part);
+        }
+        return current;
+    }
 }

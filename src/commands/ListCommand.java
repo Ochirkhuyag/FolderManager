@@ -1,47 +1,35 @@
 package commands;
 
-import java.io.File;
+import storage.Folder;
 
 public class ListCommand implements Command {
 
     private static ListCommand command;
+    private Folder rootFolder;
 
-    private ListCommand() {}
+    private ListCommand(Folder rootFolder) {
+        this.rootFolder = rootFolder;
+    }
 
-    public static Command getInstance() {
+    public static Command getInstance(Folder rootFolder) {
         if (command == null) {
-            command = new ListCommand();
+            command = new ListCommand(rootFolder);
         }
         return command;
     }
 
     public void execute(String[] args) {
-    	
         if (args.length != 1) {
-        	System.out.println("Usage: list" + args.length);
-        	return;
-        }
-
-        String path = ".";
-
-        File dir = new File(path);
-        if (!dir.exists() || !dir.isDirectory()) {
-            System.out.println("Directory '" + path + "' does not exist.");
+            System.out.println("Usage: list");
             return;
         }
-        printFolder(dir, "");
+        printFolders(rootFolder, "");
     }
 
-    private void printFolder(File folder, String preceedingSpace) {
-    	
-        File[] files = folder.listFiles();
-        if (files == null) return;
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-            	System.out.println(preceedingSpace + file.getName());
-            	printFolder(file, preceedingSpace + "\t");
-            }
+    private void printFolders(Folder folder, String indent) {
+        for (Folder sub : folder.getSubfolders()) {
+            System.out.println(indent + sub.getName());
+            printFolders(sub, indent + "  ");
         }
     }
 }
